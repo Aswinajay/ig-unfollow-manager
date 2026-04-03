@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "IG Unfollow Manager",
+  "version": "2.0.0",
+  "description": "Find and unfollow Instagram users who don't follow you back.",
+  "permissions": ["storage", "tabs", "activeTab", "declarativeNetRequest"],
+  "host_permissions": [
+    "https://www.instagram.com/*",
+    "*://*.cdninstagram.com/*",
+    "*://*.fbcdn.net/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": { "128": "icons/icon128.png" }
+  },
+  "content_scripts": [{
+    "matches": ["https://www.instagram.com/*"],
+    "js": ["content.js"],
+    "run_at": "document_idle"
+  }],
+  "background": { "service_worker": "background.js" },
+  "icons": { "128": "icons/icon128.png" },
+  "declarative_net_request": {
+    "rule_resources": []
+  }
+}

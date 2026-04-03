@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>IG Unfollow Manager</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 380px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      color: #262626;
+      background: #fff;
+    }
+
+    /* ── Update Banner ── */
+    #update-banner {
+      display: none;
+      background: #fff3cd;
+      color: #856404;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      border-bottom: 1px solid #ffc107;
+    }
+    #update-banner:hover { background: #ffe69c; }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid #efefef;
+    }
+    .header img { width: 28px; height: 28px; border-radius: 6px; }
+    .header h1 { font-size: 16px; font-weight: 700; }
+
+    /* ── Sections ── */
+    .section { padding: 12px 16px; border-bottom: 1px solid #efefef; }
+
+    label.field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 5px;
+    }
+
+    input[type=text], input[type=number], textarea {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid #dbdbdb;
+      border-radius: 6px;
+      font-size: 13px;
+      background: #fafafa;
+      outline: none;
+      transition: border 0.15s;
+    }
+    input[type=text]:focus, input[type=number]:focus, textarea:focus {
+      border-color: #0095f6;
+      background: #fff;
+    }
+    textarea { resize: vertical; min-height: 48px; font-family: inherit; }
+
+    /* ── Options Row ── */
+    .options-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .options-row .opt {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .options-row input[type=number] {
+      width: 74px;
+      padding: 5px 8px;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 9px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      text-align: center;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.45; cursor: default; }
+    .btn-blue   { background: #0095f6; color: #fff; }
+    .btn-green  { background: #2ecc71; color: #fff; }
+    .btn-red    { background: #ed4956; color: #fff; }
+    .btn-gray   { background: #efefef; color: #262626; font-size: 12px; }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-row .btn { flex: 1; }
+
+    /* ── Status ── */
+    #status {
+      padding: 8px 16px;
+      font-size: 12px;
+      color: #8e8e8e;
+      min-height: 32px;
+      line-height: 1.5;
+      text-align: center;
+    }
+    #status.error { color: #ed4956; font-weight: 600; }
+
+    /* ── Results ── */
+    #results-section { padding: 10px 16px 0; }
+
+    .results-stats {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .results-stats span { font-size: 12px; color: #8e8e8e; }
+    .results-stats strong { color: #262626; }
+
+    .export-btns {
+      display: flex;
+      gap: 6px;
+    }
+    .export-btns button {
+      background: #f0f0f0;
+      border: 1px solid #dbdbdb;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .export-btns button:hover { background: #e0e0e0; }
+
+    #search-box {
+      margin-bottom: 6px;
+    }
+    #search-box input {
+      font-size: 12px;
+      padding: 6px 10px;
+    }
+
+    .select-btns {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .select-btns button {
+      flex: 1;
+      background: #f0f0f0;
+      border: 1px solid #dbdbdb;
+      border-radius: 6px;
+      padding: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .select-btns button:hover { background: #e0e0e0; }
+
+    /* ── User List ── */
+    #user-list {
+      max-height: 230px;
+      overflow-y: auto;
+      border: 1px solid #efefef;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .user-item {
+      display: flex;
+      align-items: center;
+      padding: 7px 10px;
+      gap: 10px;
+      border-bottom: 1px solid #fafafa;
+      transition: background 0.1s;
+    }
+    .user-item:last-child { border-bottom: none; }
+    .user-item:hover { background: #fafafa; }
+
+    .user-item input[type=checkbox] {
+      width: 15px; height: 15px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .user-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #efefef;
+      flex-shrink: 0;
+    }
+
+    .user-info { flex: 1; overflow: hidden; }
+    .user-info a {
+      font-weight: 600;
+      font-size: 13px;
+      color: #262626;
+      text-decoration: none;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .user-info a:hover { color: #0095f6; }
+    .user-info .meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 1px;
+    }
+    .user-info .followers {
+      font-size: 11px;
+      color: #8e8e8e;
+    }
+
+    .badge-mutual {
+      font-size: 10px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 1px 6px;
+      border-radius: 8px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .btn-wl {
+      background: none;
+      border: 1px solid #dbdbdb;
+      border-radius: 4px;
+      padding: 3px 7px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #555;
+      flex-shrink: 0;
+    }
+    .btn-wl:hover { background: #f0f0f0; }
+
+    /* ── Delay Slider ── */
+    .delay-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+    }
+    .delay-row label { font-size: 12px; color: #555; white-space: nowrap; font-weight: 600; }
+    .delay-row input[type=range] { flex: 1; }
+    .delay-row span { font-size: 12px; font-weight: 700; color: #0095f6; width: 28px; text-align: right; }
+
+    /* ── Action Area ── */
+    #action-area { padding: 0 16px 14px; }
+
+    .empty-msg {
+      padding: 20px;
+      text-align: center;
+      color: #8e8e8e;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Update banner (shown when newer version detected) -->
+  <div id="update-banner">🚀 Update available! Click to download.</div>
+
+  <!-- Header -->
+  <div class="header">
+    <img src="icons/icon128.png" alt="logo" onerror="this.style.display='none'">
+    <h1>IG Unfollow Manager</h1>
+  </div>
+
+  <!-- Scan Options -->
+  <div class="section">
+
+    <label class="field-label">Target Profile (leave blank for your own account)</label>
+    <input type="text" id="target-username" placeholder="e.g. cristiano  (must be public or followed by you)">
+
+    <div class="options-row" style="margin-top:10px;">
+      <div class="opt">
+        <label class="field-label" style="margin:0;">Skip if followers ≥</label>
+        <input type="number" id="threshold" value="10000" min="0">
+      </div>
+      <label class="opt">
+        <input type="checkbox" id="fast-scan">
+        Fast Scan
+      </label>
+    </div>
+
+    <div style="margin-top:10px;">
+      <label class="field-label">Whitelist (comma-separated usernames to skip)</label>
+      <textarea id="whitelist" placeholder="e.g. friend1, bestie, mybrand"></textarea>
+    </div>
+
+    <div style="margin-top:10px;">
+      <button class="btn btn-blue" id="btn-scan">🔍 Scan Non-Followers</button>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div id="status">Open Instagram and click Scan.</div>
+
+  <!-- Results -->
+  <div id="results-section" style="display:none;">
+
+    <div class="results-stats">
+      <span><strong id="count-shown">0</strong> accounts found &nbsp;·&nbsp; <strong id="count-skipped">0</strong> skipped</span>
+      <div class="export-btns">
+        <button id="btn-export-txt" title="Export @usernames list">@ List</button>
+        <button id="btn-export-csv" title="Export full CSV">CSV</button>
+      </div>
+    </div>
+
+    <div id="search-box">
+      <input type="text" id="search" placeholder="🔍 Search usernames...">
+    </div>
+
+    <div class="select-btns">
+      <button id="btn-select-all">✅ Select All</button>
+      <button id="btn-deselect-all">❌ Deselect All</button>
+    </div>
+
+    <div id="user-list"></div>
+  </div>
+
+  <!-- Delay + Action -->
+  <div id="action-area" style="display:none;">
+    <div class="delay-row">
+      <label>Delay between actions:</label>
+      <input type="range" id="delay" min="0" max="12" value="3" step="1">
+      <span><span id="delay-val">3</span>s</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-green" id="btn-action">Unfollow Selected</button>
+      <button class="btn btn-red"   id="btn-stop">■ Stop</button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
