@@ -20,7 +20,22 @@ function getCsrf() {
 // Most reliable way to get own user ID — always in cookie when logged in
 function getMyIdFromCookie() {
   const m = document.cookie.match(/ds_user_id=([^;]+)/);
-  return m ? m[1] : null;
+  return m ? m[1].trim() : null;
+}
+
+// Get authenticated user from Instagram API (most reliable for API calls)
+async function getAuthenticatedUser() {
+  try {
+    const data = await igGet('/api/v1/accounts/current_user/?edit=true');
+    if (data?.user) {
+      return { id: String(data.user.pk), username: data.user.username };
+    }
+  } catch (e) {
+    // API failed, fall back to cookie
+  }
+  const cookieId = getMyIdFromCookie();
+  if (cookieId) return { id: cookieId, username: '' };
+  return null;
 }
 
 // Send events to background → popup
@@ -125,13 +140,13 @@ async function doScan({ threshold = 10000, whitelist = [], fastScan = false, tar
   stopRequested = false;
 
   try {
-    // Step 1: Identify self
+    // Step 1: Identify self using authenticated API (not just cookie)
     emit('status', { text: 'Identifying your account...' });
-    const myId = getMyIdFromCookie();
-    if (!myId) throw new Error('Not logged in. Please log in to Instagram and try again.');
+    const me = await getAuthenticatedUser();
+    if (!me) throw new Error('Not logged in. Please log in to Instagram and try again.');
 
     // Step 2: Resolve target
-    let targetId = myId;
+    let targetId = me.id;
     let isSelf = true;
     let displayName = 'your account';
 
@@ -141,10 +156,14 @@ async function doScan({ threshold = 10000, whitelist = [], fastScan = false, tar
 
       if (!profile) throw new Error(`Could not find @${targetUsername}. Check the username and try again.`);
 
-      // Self-check: is the target the logged-in user?
-      if (profile.id === myId) {
-        // Same person — use self-scan
-        targetId = myId;
+      // Self-check: compare by API ID, cookie ID, AND username
+      const cookieId = getMyIdFromCookie();
+      const isSelfProfile = profile.id === me.id
+                         || (cookieId && profile.id === cookieId)
+                         || (me.username && profile.username.toLowerCase() === me.username.toLowerCase());
+
+      if (isSelfProfile) {
+        targetId = me.id; // Use API-verified ID, not cookie
         isSelf = true;
         displayName = 'your account';
         emit('status', { text: 'Scanning your own account...' });
@@ -162,7 +181,7 @@ async function doScan({ threshold = 10000, whitelist = [], fastScan = false, tar
       following = await fetchAllPages(`/api/v1/friendships/${targetId}/following/?count=200`);
     } catch (e) {
       if (e.message.includes('400') || e.message.includes('401')) {
-        if (isSelf) throw new Error('Could not load your following list. Please refresh Instagram and try again.');
+        if (isSelf) throw new Error('Instagram blocked access to your following list. Clear the Target Profile field and try again, or refresh Instagram.');
         throw new Error(`@${targetUsername} has a private account. You need to follow them first to scan their list.`);
       }
       throw e;
